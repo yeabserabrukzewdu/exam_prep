@@ -59,8 +59,15 @@ const App: React.FC = () => {
             const response = await fetch(`/api/users/${encodeURIComponent(email)}`);
             if (!response.ok) {
                 if (response.status === 404) return null;
-                const errorData = await response.json();
-                console.error("Fetch user error:", errorData);
+                
+                const contentType = response.headers.get("content-type");
+                if (contentType && contentType.includes("application/json")) {
+                    const errorData = await response.json();
+                    console.error("Fetch user error (JSON):", errorData);
+                } else {
+                    const errorText = await response.text();
+                    console.error("Fetch user error (Text):", errorText);
+                }
                 return null;
             }
             return await response.json();
