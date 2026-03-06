@@ -7,31 +7,41 @@ import { fileURLToPath } from "url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+console.log("Server starting...");
+console.log("NODE_ENV:", process.env.NODE_ENV);
+console.log("CWD:", process.cwd());
+
 // Supabase Configuration
 let supabaseClient: any = null;
 
 function getSupabase() {
-  if (!supabaseClient) {
-    const supabaseUrl = process.env.VITE_SUPABASE_URL || 
-                       process.env.SUPABASE_URL || 
-                       process.env.NEXT_PUBLIC_SUPABASE_URL || 
-                       process.env.REACT_APP_SUPABASE_URL;
-                       
-    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 
-                       process.env.SUPABASE_ANON_KEY || 
-                       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-                       process.env.REACT_APP_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      const missing = [];
-      if (!supabaseUrl) missing.push("SUPABASE_URL");
-      if (!supabaseKey) missing.push("SUPABASE_ANON_KEY");
-      throw new Error(`Missing Supabase credentials: ${missing.join(", ")}. Check Vercel Environment Variables.`);
-    }
-    
-    supabaseClient = createClient(supabaseUrl, supabaseKey);
+  if (supabaseClient) return supabaseClient;
+
+  const supabaseUrl = process.env.VITE_SUPABASE_URL || 
+                     process.env.SUPABASE_URL || 
+                     process.env.NEXT_PUBLIC_SUPABASE_URL || 
+                     process.env.REACT_APP_SUPABASE_URL;
+                     
+  const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY || 
+                     process.env.SUPABASE_ANON_KEY || 
+                     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
+                     process.env.REACT_APP_SUPABASE_ANON_KEY;
+  
+  if (!supabaseUrl || !supabaseKey) {
+    const missing = [];
+    if (!supabaseUrl) missing.push("SUPABASE_URL");
+    if (!supabaseKey) missing.push("SUPABASE_ANON_KEY");
+    console.error(`Missing Supabase credentials: ${missing.join(", ")}`);
+    return null;
   }
-  return supabaseClient;
+  
+  try {
+    supabaseClient = createClient(supabaseUrl, supabaseKey);
+    return supabaseClient;
+  } catch (e: any) {
+    console.error("Failed to create Supabase client:", e.message);
+    return null;
+  }
 }
 
 const app = express();
@@ -102,6 +112,9 @@ app.get("/api/users/:email", async (req, res) => {
   console.log(`Fetching user: ${email}`);
   try {
     const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client not initialized. Check environment variables." });
+    }
     const { data: user, error } = await supabase
       .from("users")
       .select("*")
@@ -149,6 +162,9 @@ app.post("/api/signup", async (req, res) => {
   console.log(`Signup attempt: ${email} (${id})`);
   try {
     const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client not initialized. Check environment variables." });
+    }
     // Check if exists
     const { data: existing, error: checkError } = await supabase
       .from("users")
@@ -225,6 +241,9 @@ app.put("/api/users/:id", async (req, res) => {
   
   try {
     const supabase = getSupabase();
+    if (!supabase) {
+      return res.status(500).json({ error: "Supabase client not initialized. Check environment variables." });
+    }
     const { error } = await supabase
       .from("users")
       .update({
@@ -275,9 +294,15 @@ if (process.env.NODE_ENV !== "production") {
     console.error("Failed to start Vite dev server:", e);
   }
 } else {
-  app.use(express.static(path.join(__dirname, "dist")));
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "dist", "index.html"));
+  const distPath = path.join(process.cwd(), "dist");
+  console.log("Serving static files from:", distPath);
+  app.use(express.static(distPath));
+  app.get("*", (req, res, next) => {
+    // If it's an API route that wasn't matched, don't serve index.html
+    if (req.path.startsWith('/api/')) {
+      return next();
+    }
+    res.sendFile(path.join(distPath, "index.html"));
   });
 }
 
