@@ -52,7 +52,14 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ currentUser, onSaveQuizResult, 
         } else if (pastPaperDetails) {
             fetchedQuestions = pastPapers[pastPaperDetails.subject]?.papers?.[pastPaperDetails.year]?.questions || [];
         } else if (realExamDetails) {
-            fetchedQuestions = pastPapers[realExamDetails.subject]?.papers?.[realExamDetails.year]?.questions || [];
+            const subjectData = quizData[realExamDetails.subject];
+            if (subjectData) {
+                Object.values(subjectData).forEach(unit => {
+                    Object.values(unit).forEach(levelQuestions => {
+                        fetchedQuestions = [...fetchedQuestions, ...levelQuestions];
+                    });
+                });
+            }
         }
         
         const limit = realExamDetails ? 60 : 10;
@@ -112,7 +119,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ currentUser, onSaveQuizResult, 
         // Create local progress entry for immediate UI update
         let progressEntry;
         if (realExamDetails) {
-            progressEntry = { subject: realExamDetails.subject, year: realExamDetails.year, type: 'real_exam' as const, score: score, total: questions.length };
+            progressEntry = { subject: realExamDetails.subject, type: 'real_exam' as const, score: score, total: questions.length };
         } else if (pastPaperDetails) {
             progressEntry = { subject: pastPaperDetails.subject, year: pastPaperDetails.year, type: 'past_paper' as const, score: score, total: questions.length };
         } else {
@@ -123,7 +130,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ currentUser, onSaveQuizResult, 
 
         // Call parent to save to DB
         if (realExamDetails) {
-             onSaveQuizResult(updatedUser, realExamDetails.subject, score, questions.length, undefined, undefined, realExamDetails.year, 'real_exam');
+             onSaveQuizResult(updatedUser, realExamDetails.subject, score, questions.length, undefined, undefined, undefined, 'real_exam');
         } else if (pastPaperDetails) {
              onSaveQuizResult(updatedUser, pastPaperDetails.subject, score, questions.length, undefined, undefined, pastPaperDetails.year, 'past_paper');
         } else {
@@ -235,7 +242,7 @@ const QuizScreen: React.FC<QuizScreenProps> = ({ currentUser, onSaveQuizResult, 
     }
     
     const quizTitle = realExamDetails 
-        ? `Real Exam: ${realExamDetails.subject.charAt(0).toUpperCase() + realExamDetails.subject.slice(1)} (${realExamDetails.year})`
+        ? `Real Exam: ${realExamDetails.subject.charAt(0).toUpperCase() + realExamDetails.subject.slice(1)}`
         : pastPaperDetails 
             ? `${pastPapers[pastPaperDetails.subject].name} - ${pastPaperDetails.year}` 
             : `${quizDetails?.subject} - Level ${quizDetails?.level}`;

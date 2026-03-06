@@ -1,3 +1,4 @@
+
 import React from 'react';
 import Container from './common/Container';
 import Button from './common/Button';
@@ -14,6 +15,7 @@ const subjectIcons: Record<string, string> = {
     chemistry: '🧪',
     english: '📖',
     physics: '⚡️',
+    civics: '🏛️',
     history: '🗿',
     geography: '🌍',
     economics: '💰',
