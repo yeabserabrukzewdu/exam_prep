@@ -4,8 +4,8 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "start": "node server.ts",
+    "dev": "tsx api/index.ts",
+    "start": "node api/index.ts",
     "build": "vite build",
     "preview": "vite preview",
     "lint": "tsc --noEmit"
@@ -14,7 +14,7 @@
     "@google/genai": "^1.30.0",
     "@supabase/supabase-js": "^2.98.0",
     "cors": "^2.8.6",
-    "express": "^5.2.1",
+    "express": "^4.21.2",
     "framer-motion": "^12.34.3",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
