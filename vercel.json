@@ -6,7 +6,7 @@
       "destination": "/api/index.ts"
     },
     {
-      "source": "/(.*)",
+      "source": "/((?!.*\\.pdf$|.*\\.png$|.*\\.jpg$|.*\\.svg$|.*\\.js$|.*\\.css$|.*\\.mjs$).*)",
       "destination": "/index.html"
     }
   ]
